@@ -9,7 +9,6 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.bengisusahin.odev_10.R
 import com.bengisusahin.odev_10.databinding.ActivityDetailBinding
-import com.bengisusahin.odev_10.services.NoteService
 import com.bengisusahin.odev_10.utils.DateUtils
 
 class DetailActivity : AppCompatActivity() {

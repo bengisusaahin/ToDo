@@ -11,22 +11,25 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bengisusahin.odev_10.R
 import com.bengisusahin.odev_10.adapter.NoteAdapter
+import com.bengisusahin.odev_10.configs.AppDatabase
 import com.bengisusahin.odev_10.databinding.ActivityMainBinding
 import com.bengisusahin.odev_10.models.Note
-import com.bengisusahin.odev_10.services.NoteService
+import com.bengisusahin.odev_10.repository.NoteRepository
 import com.bengisusahin.odev_10.utils.SwipeToDelete
+import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
-    private lateinit var noteService: NoteService
+    private lateinit var noteRepository: NoteRepository
     private lateinit var noteAdapter: NoteAdapter
-    private lateinit var allNotes:MutableList<Note>
+    private lateinit var allNotes: MutableList<Note>
     private var userId: Int = -1
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -40,7 +43,9 @@ class MainActivity : AppCompatActivity() {
             insets
         }
 
-        noteService = NoteService(this)
+        val database = AppDatabase(this)
+        val noteDao = database.noteDao()
+        noteRepository = NoteRepository(noteDao)
         userId = intent.getIntExtra("userId", -1)
 
         setUpFloatingActionButton()
@@ -55,9 +60,11 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         // Update the notes list and refresh the RecyclerView after updating the notes
-        allNotes.clear()
-        allNotes.addAll(noteService.getNotesForUser(userId))
-        noteAdapter.notifyDataSetChanged()
+        lifecycleScope.launch {
+            allNotes.clear()
+            allNotes.addAll(noteRepository.getAllNotesForUser(userId))
+            noteAdapter.notifyDataSetChanged()
+        }
     }
 
     // Set up the floating action button to navigate to the AddNoteActivity
@@ -70,17 +77,20 @@ class MainActivity : AppCompatActivity() {
     }
 
     // Set up the RecyclerView with the notes list
+    // Set up the RecyclerView with the notes list
     private fun setUpRecyclerView() {
-        allNotes = noteService.getNotesForUser(userId)
-        Log.d("allNotes",allNotes.toString())
-        noteAdapter = NoteAdapter(allNotes)
-        binding.recyclerView.layoutManager = LinearLayoutManager(this)
-        binding.recyclerView.adapter = noteAdapter
+        lifecycleScope.launch {
+            allNotes.clear()
+            allNotes.addAll(noteRepository.getAllNotesForUser(userId))
+            noteAdapter = NoteAdapter(allNotes)
+            binding.recyclerView.layoutManager = LinearLayoutManager(this@MainActivity)
+            binding.recyclerView.adapter = noteAdapter
 
-        noteAdapter.onNoteClick = { note ->
-            val intent = Intent(this, DetailActivity::class.java)
-            intent.putExtra("noteId", note.nid)
-            startActivity(intent)
+            noteAdapter.onNoteClick = { note ->
+                val intent = Intent(this@MainActivity, DetailActivity::class.java)
+                intent.putExtra("noteId", note.nid)
+                startActivity(intent)
+            }
         }
     }
 
@@ -88,23 +98,27 @@ class MainActivity : AppCompatActivity() {
     private fun setUpSearchView() {
         binding.searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String?): Boolean {
-                performSearch(query)
+                lifecycleScope.launch {
+                    performSearch(query)
+                }
                 return true
             }
 
             override fun onQueryTextChange(newText: String?): Boolean {
-                performSearch(newText)
+                lifecycleScope.launch {
+                    performSearch(newText)
+                }
                 return true
             }
         })
     }
-    private fun performSearch(query: String?) {
+    private suspend fun performSearch(query: String?) {
         val trimmedQuery = query?.trim()
         if (trimmedQuery.isNullOrEmpty()) {
             // If the query is empty after trimming, do nothing and return the current list
             noteAdapter.updateNotes(allNotes)
         } else {
-            val filteredNotes = noteService.searchNotes(trimmedQuery, userId)
+            val filteredNotes = noteRepository.searchNotes(userId, trimmedQuery)
             noteAdapter.updateNotes(filteredNotes)
         }
     }
@@ -121,9 +135,11 @@ class MainActivity : AppCompatActivity() {
                             .setTitle("Delete All Note")
                             .setMessage("Are you sure you want to delete all note?")
                             .setPositiveButton("Yes") { _, _ ->
-                                noteService.deleteAllNotesForUser(userId)
-                                allNotes.clear()
-                                noteAdapter.notifyDataSetChanged()
+                                lifecycleScope.launch {
+                                    noteRepository.deleteAllNotesForUser(userId)
+                                    allNotes.clear()
+                                    noteAdapter.notifyDataSetChanged()
+                                }
                                 Toast.makeText(this, "Notes deleted", Toast.LENGTH_SHORT).show()
                             }
                             .setNegativeButton("No", ){dialog, _ ->
@@ -131,13 +147,13 @@ class MainActivity : AppCompatActivity() {
                             }
                             .show()
                         true
-                    }R.id.logout -> {
-                    val intent = Intent(this, LoginActivity::class.java)
-                    startActivity(intent)
-                    finish()
-                    true
-                }
-
+                    }
+                    R.id.logout -> {
+                        val intent = Intent(this, LoginActivity::class.java)
+                        startActivity(intent)
+                        finish()
+                        true
+                    }
                     else -> false
                 }
             }
@@ -156,9 +172,11 @@ class MainActivity : AppCompatActivity() {
                     .setTitle("Delete Note")
                     .setMessage("Are you sure you want to delete this note?")
                     .setPositiveButton("Yes") { _, _ ->
-                        noteService.deleteNoteById(note.nid)
-                        allNotes.removeAt(position)
-                        noteAdapter.notifyItemRemoved(position)
+                        lifecycleScope.launch {
+                            noteRepository.deleteNote(note)
+                            allNotes.removeAt(position)
+                            noteAdapter.notifyItemRemoved(position)
+                        }
                         Toast.makeText(this@MainActivity, "Note deleted", Toast.LENGTH_SHORT).show()
                     }
                     .setNegativeButton("No",){ dialog, _ ->

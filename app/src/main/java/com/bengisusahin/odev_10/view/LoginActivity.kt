@@ -7,14 +7,17 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.lifecycle.lifecycleScope
 import com.bengisusahin.odev_10.R
+import com.bengisusahin.odev_10.configs.AppDatabase
 import com.bengisusahin.odev_10.databinding.ActivityLoginBinding
-import com.bengisusahin.odev_10.services.UserService
+import com.bengisusahin.odev_10.repository.UserRepository
+import kotlinx.coroutines.launch
 
 class LoginActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityLoginBinding
-    private lateinit var userService: UserService
+    private lateinit var userRepository: UserRepository
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityLoginBinding.inflate(layoutInflater)
@@ -25,13 +28,16 @@ class LoginActivity : AppCompatActivity() {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
-
-        userService = UserService(this)
+        val database = AppDatabase(this)
+        val userDao = database.userDao()
+        userRepository = UserRepository(userDao)
 
         binding.loginButton.setOnClickListener {
             val username = binding.textUsername.text.toString()
             val password = binding.textPassword.text.toString()
-            login(username, password)
+            lifecycleScope.launch {
+                login(username, password)
+            }
         }
         // go to the signup activity when the user clicks the sign up text
         binding.textviewSignUp.setOnClickListener {
@@ -42,12 +48,12 @@ class LoginActivity : AppCompatActivity() {
     }
 
     // login function checks if the user exists in the database
-    private fun login(username: String, password: String) {
+    private suspend fun login(username: String, password: String) {
         if (username.isEmpty() || password.isEmpty()) {
             Toast.makeText(this, "Please fill in all fields", Toast.LENGTH_SHORT).show()
             return
         }else {
-            val user = userService.getUser(username, password)
+            val user = userRepository.getUser(username, password)
             if (user != null) {
                 // user exists
                 // go to the main activity

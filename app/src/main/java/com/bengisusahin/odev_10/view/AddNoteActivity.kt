@@ -13,7 +13,6 @@ import com.bengisusahin.odev_10.R
 import com.bengisusahin.odev_10.adapter.NoteAdapter
 import com.bengisusahin.odev_10.databinding.ActivityAddNoteBinding
 import com.bengisusahin.odev_10.models.Note
-import com.bengisusahin.odev_10.services.NoteService
 import com.bengisusahin.odev_10.utils.DateUtils
 
 class AddNoteActivity : AppCompatActivity() {
