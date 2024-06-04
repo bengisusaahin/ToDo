@@ -10,25 +10,26 @@ import com.bengisusahin.odev_10.models.Note
 @Dao
 interface NoteDao {
 
+    // suspend keyword is used to make the function asynchronous
     @Insert
-    fun insertNote(note: Note) : Long  // return id
+    suspend fun insertNote(note: Note) : Long  // return id
 
     @Update
-    fun updateNote(note: Note) : Int
+    suspend fun updateNote(note: Note) : Int
 
     @Delete
-    fun deleteNote (note: Note) : Int
+    suspend fun deleteNote (note: Note) : Int
 
     @Query("DELETE FROM note WHERE uid = :uid")
-    fun deleteAllNotesForUser(uid: Int) : Int
+    suspend fun deleteAllNotesForUser(uid: Int) : Int
 
     @Query("SELECT * FROM note WHERE uid = :uid")
-    fun getAllNotesForUser(uid: Int) : List<Note>
+    suspend fun getAllNotesForUser(uid: Int) : List<Note>
 
     @Query("SELECT * FROM note WHERE nid = :nid")
-    fun getNoteById(nid: Int) : Note
+    suspend fun getNoteById(nid: Int) : Note
 
     @Query("SELECT * FROM note WHERE uid = :uid AND (title LIKE :q OR content LIKE :q)")
-    fun searchNotes(uid: Int, q: String) : List<Note>
+    suspend fun searchNotes(uid: Int, q: String) : List<Note>
 
 }

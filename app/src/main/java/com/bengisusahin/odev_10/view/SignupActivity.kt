@@ -8,7 +8,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.bengisusahin.odev_10.R
-import com.bengisusahin.odev_10.configs.DB
 import com.bengisusahin.odev_10.databinding.ActivitySignupBinding
 import com.bengisusahin.odev_10.models.User
 import com.bengisusahin.odev_10.services.UserService

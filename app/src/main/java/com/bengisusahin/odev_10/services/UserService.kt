@@ -2,7 +2,6 @@ package com.bengisusahin.odev_10.services
 
 import android.content.ContentValues
 import android.content.Context
-import com.bengisusahin.odev_10.configs.DB
 import com.bengisusahin.odev_10.models.User
 
 class UserService(context: Context) : DB(context) {
