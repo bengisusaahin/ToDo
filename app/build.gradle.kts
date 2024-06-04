@@ -47,6 +47,7 @@ dependencies {
 
     // To use Kotlin annotation processing tool (kapt)
     kapt(libs.androidx.room.compiler)
+    implementation (libs.androidx.room.ktx)
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)

@@ -29,7 +29,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private lateinit var noteRepository: NoteRepository
     private lateinit var noteAdapter: NoteAdapter
-    private lateinit var allNotes: MutableList<Note>
+    private var allNotes: MutableList<Note> = mutableListOf()
     private var userId: Int = -1
 
     override fun onCreate(savedInstanceState: Bundle?) {

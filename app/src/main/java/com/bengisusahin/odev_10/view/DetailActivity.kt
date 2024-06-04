@@ -7,14 +7,21 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.lifecycle.lifecycleScope
 import com.bengisusahin.odev_10.R
+import com.bengisusahin.odev_10.configs.AppDatabase
 import com.bengisusahin.odev_10.databinding.ActivityDetailBinding
+import com.bengisusahin.odev_10.models.Note
+import com.bengisusahin.odev_10.repository.NoteRepository
+import com.bengisusahin.odev_10.repository.UserRepository
 import com.bengisusahin.odev_10.utils.DateUtils
+import kotlinx.coroutines.launch
 
 class DetailActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityDetailBinding
-    private lateinit var noteService: NoteService
+    private lateinit var noteRepository: NoteRepository
+    private var note: Note? = null
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityDetailBinding.inflate(layoutInflater)
@@ -26,29 +33,39 @@ class DetailActivity : AppCompatActivity() {
             insets
         }
 
-        noteService = NoteService(this)
+        val database = AppDatabase(this)
+        val noteDao = database.noteDao()
+        noteRepository = NoteRepository(noteDao)
 
         DateUtils.showDatePickerDialog(this, binding.etDetailDate)
 
         val noteId = intent.getIntExtra("noteId", -1)
-        val note = noteService.getNoteById(noteId)
+        lifecycleScope.launch {
+            note = noteRepository.getNoteById(noteId)
 
-        note?.let {
-            binding.apply {
-                etDetailTitle.setText(it.title)
-                etDetailDate.setText(it.date)
-                etDetailContent.setText(it.content)
+            note?.let {
+                binding.apply {
+                    etDetailTitle.setText(it.title)
+                    etDetailDate.setText(it.date)
+                    etDetailContent.setText(it.content)
+                }
             }
         }
+
         // delete button click listener to delete the note
         binding.deleteButton.setOnClickListener {
             AlertDialog.Builder(this)
                 .setTitle("Delete Note")
                 .setMessage("Are you sure you want to delete this note?")
                 .setPositiveButton("Yes") { _, _ ->
-                    noteService.deleteNoteById(noteId)
-                    Toast.makeText(this, "Note deleted", Toast.LENGTH_SHORT).show()
-                    finish()
+                    note?.let { note ->
+                        lifecycleScope.launch {
+                            noteRepository.deleteNote(note)
+                            Toast.makeText(this@DetailActivity, "Note deleted", Toast.LENGTH_SHORT)
+                                .show()
+                            finish()
+                        }
+                    }
                 }
                 .setNegativeButton("No",){ _, _ ->
                     finish()
@@ -70,9 +87,11 @@ class DetailActivity : AppCompatActivity() {
                 if (title == it.title && date == it.date && content == it.content) {
                     Toast.makeText(this, "No changes made", Toast.LENGTH_SHORT).show()
                 }else{
-                    noteService.updateNoteById(noteId, title, date, content)
-                    Toast.makeText(this, "Note updated", Toast.LENGTH_SHORT).show()
-                    finish()
+                    lifecycleScope.launch {
+                        noteRepository.updateNote(Note(nid = noteId, uid = it.uid, title = title, date = date, content = content))
+                        Toast.makeText(this@DetailActivity, "Note updated", Toast.LENGTH_SHORT).show()
+                        finish()
+                    }
                 }
             }
         }
